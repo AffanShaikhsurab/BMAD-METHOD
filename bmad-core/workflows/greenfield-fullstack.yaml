@@ -3,7 +3,7 @@ workflow:
   name: Greenfield Full-Stack Application Development
   description: >-
     Agent workflow for building full-stack applications from concept to development.
-    Supports both comprehensive planning for complex projects and rapid prototyping for simple ones.
+    Supports both comprehensive planning and rapid prototyping. Includes an on-demand bug repair process.
   type: greenfield
   project_types:
     - web-app
@@ -137,11 +137,30 @@ workflow:
         - Dev Agent (New Chat): Address remaining items
         - Return to QA for final approval
 
+    # --- NEW REPAIR AGENT WORKFLOW (PARALLEL PROCESS) ---
+    - agent: repair
+      action: fix_bug
+      id: on_demand_repair_process
+      triggers:
+        - ci_test_failure
+        - manual_bug_report
+        - qa_blocker
+      notes: |
+        This is not a sequential step but an on-demand process.
+        It can be triggered at any time after code implementation begins.
+        - User invokes: @repair *run on [story/ticket]
+        - The agent autonomously gathers context from other agents (@pm, @analyst).
+        - It analyzes its repair-memory.jsonl for historical fixes.
+        - It localizes the bug, searches for external solutions, and generates a patch.
+        - User validates the patch.
+        - On success, the agent records the solution in its memory file.
+
     - repeat_development_cycle:
       action: continue_for_all_stories
       notes: |
-        Repeat story cycle (SM → Dev → QA) for all epic stories
-        Continue until all stories in PRD are complete
+        Repeat story cycle (SM → Dev → QA) for all epic stories.
+        Trigger the @repair agent as needed for bugs discovered during this cycle.
+        Continue until all stories in PRD are complete.
 
     - agent: po
       action: epic_retrospective
@@ -165,47 +184,64 @@ workflow:
   flow_diagram: |
     ```mermaid
     graph TD
-        A[Start: Greenfield Project] --> B[analyst: project-brief.md]
-        B --> C[pm: prd.md]
-        C --> D[ux-expert: front-end-spec.md]
-        D --> D2{Generate v0 prompt?}
-        D2 -->|Yes| D3[ux-expert: create v0 prompt]
-        D2 -->|No| E[architect: fullstack-architecture.md]
-        D3 --> D4[User: generate UI in v0/Lovable]
-        D4 --> E
-        E --> F{Architecture suggests PRD changes?}
-        F -->|Yes| G[pm: update prd.md]
-        F -->|No| H[po: validate all artifacts]
-        G --> H
-        H --> I{PO finds issues?}
-        I -->|Yes| J[Return to relevant agent for fixes]
-        I -->|No| K[po: shard documents]
-        J --> H
+        subgraph "Planning Phase"
+            A[Start: Project] --> B[analyst: project-brief.md]
+            B --> C[pm: prd.md]
+            C --> D[ux-expert: front-end-spec.md]
+            D --> D2{Generate v0 prompt?}
+            D2 -->|Yes| D3[ux-expert: create v0 prompt]
+            D2 -->|No| E[architect: fullstack-architecture.md]
+            D3 --> D4[User: generate UI in v0/Lovable]
+            D4 --> E
+            E --> F{Architecture suggests PRD changes?}
+            F -->|Yes| G[pm: update prd.md]
+            F -->|No| H[po: validate all artifacts]
+            G --> H
+            H --> I{PO finds issues?}
+            I -->|Yes| J[Return to relevant agent for fixes]
+            I -->|No| K[po: shard documents]
+            J --> H
+        end
+
+        subgraph "Development & Repair Cycle"
+            K --> L[sm: create story]
+            L --> M{Review draft story?}
+            M -->|Yes| N[analyst/pm: review & approve story]
+            M -->|No| O[dev: implement story]
+            N --> O
+            O --> P{QA review?}
+            P -->|Yes| Q[qa: review implementation]
+            P -->|No| R{More stories?}
+            Q --> S{QA found issues?}
+            S -->|Yes| T[dev: address QA feedback]
+            S -->|No| R
+            T --> Q
+            R -->|Yes| L
+            R -->|No| U[End Development Cycle]
+        end
         
-        K --> L[sm: create story]
-        L --> M{Review draft story?}
-        M -->|Yes| N[analyst/pm: review & approve story]
-        M -->|No| O[dev: implement story]
-        N --> O
-        O --> P{QA review?}
-        P -->|Yes| Q[qa: review implementation]
-        P -->|No| R{More stories?}
-        Q --> S{QA found issues?}
-        S -->|Yes| T[dev: address QA feedback]
-        S -->|No| R
-        T --> Q
-        R -->|Yes| L
-        R -->|No| U{Epic retrospective?}
-        U -->|Yes| V[po: epic retrospective]
-        U -->|No| W[Project Complete]
-        V --> W
+        subgraph "On-Demand Repair Process (Anytime)"
+            style Repair fill:#FFDDC1,stroke:#333,stroke-width:2px
+            O --> Bug{Bug Found?}
+            Q --> Bug
+            T --> Bug
+            Bug -->|Yes| Repair[repair: fix_bug]
+            Repair --> O
+        end
+
+        subgraph "Completion Phase"
+            U --> V{Epic retrospective?}
+            V -->|Yes| W[po: epic retrospective]
+            V -->|No| X[Project Complete]
+            W --> X
+        end
 
         B -.-> B1[Optional: brainstorming]
         B -.-> B2[Optional: market research]
         D -.-> D1[Optional: user research]
         E -.-> E1[Optional: technical research]
 
-        style W fill:#90EE90
+        style X fill:#90EE90
         style K fill:#ADD8E6
         style L fill:#ADD8E6
         style O fill:#ADD8E6
@@ -217,7 +253,7 @@ workflow:
         style E fill:#FFE4B5
         style N fill:#F0E68C
         style Q fill:#F0E68C
-        style V fill:#F0E68C
+        style W fill:#F0E68C
     ```
 
   decision_guidance:
