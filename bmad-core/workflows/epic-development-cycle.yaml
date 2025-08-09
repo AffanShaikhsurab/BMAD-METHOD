@@ -1,0 +1,215 @@
+workflow:
+  id: epic-development-cycle
+  name: Epic Development Cycle with Comprehensive Testing
+  description: >
+    Structured agent workflow for implementing epic stories with comprehensive testing,
+    validation, and error handling. Follows the sequence: Developer → Testing → QA Validation → Repair.
+    Integrates with BMAD learning and implementation tracking systems.
+  type: development-cycle
+  project_types:
+    - epic-story
+    - feature-implementation
+    - bug-fix
+    - enhancement
+
+  sequence:
+    - agent: dev
+      action: implement_epic_story
+      creates: implementation_files
+      requires: story.md
+      notes: |
+        Developer Agent Implementation:
+        - Load epic/story context from .bmad/implementations/
+        - Use MCP servers (Serena MCP for codebase search, domain-specific MCPs)
+        - Implement functionality according to epic requirements
+        - Follow standardized commenting guidelines for AI readability
+        - Create comprehensive implementation documentation
+        - DO NOT run tests or builds - focus purely on implementation
+        - Update story status to "Implementation Complete"
+        - Record implementation learnings in appropriate technical domain folders
+
+    - agent: qa
+      action: create_test_cases
+      creates: test_files
+      requires: implementation_files
+      notes: |
+        QA Agent - Test Case Creation Phase:
+        - Load implementation context and epic requirements
+        - Use MCP servers for comprehensive context (Playwright for E2E, domain MCPs)
+        - Create comprehensive test cases covering:
+          * Unit tests for individual functions/components
+          * Integration tests for component interactions
+          * E2E tests for user workflows
+          * Edge cases and error scenarios
+        - Validate test cases against epic acceptance criteria
+        - Ensure test coverage aligns with functionality requirements
+        - Document test strategy and rationale
+        - Update story status to "Tests Created"
+
+    - agent: qa
+      action: validate_functionality
+      updates: implementation_files
+      requires: test_files
+      notes: |
+        QA Agent - Functionality Validation Phase:
+        - Execute all created test cases
+        - Validate that implemented functionality matches epic requirements exactly
+        - Check for hallucination - ensure no extra/missing features
+        - Verify acceptance criteria are met
+        - Perform code quality review with refactoring if needed
+        - Test error handling and edge cases
+        - Validate performance and security considerations
+        - Document validation results and any issues found
+        - Update story status based on validation results:
+          * "Validation Passed" if all tests pass and requirements met
+          * "Validation Failed" if issues found
+
+    - conditional_repair:
+      condition: validation_failed_or_errors_found
+      agent: repair
+      action: resolve_issues
+      updates: implementation_files
+      requires: validation_results
+      notes: |
+        Repair Agent - Error Resolution:
+        - Load repair-memory.jsonl for historical solutions
+        - Analyze validation failures and error reports
+        - Consult .bmad/learnings/ for similar past issues
+        - Query other agents (@pm, @analyst) for additional context if needed
+        - Apply structured repair workflow:
+          * Identify root cause of issues
+          * Develop repair strategy
+          * Implement fixes with clear explanations
+          * Validate fixes don't break existing functionality
+        - Update repair-memory.jsonl with successful solutions
+        - Record repair learnings in technical domain folders
+        - Return to QA validation if major changes made
+
+    - agent: qa
+      action: final_validation
+      condition: repair_completed
+      validates: repaired_implementation
+      notes: |
+        QA Agent - Post-Repair Validation:
+        - Re-run all test cases after repair
+        - Validate that original issues are resolved
+        - Ensure no regression issues introduced
+        - Confirm epic requirements still fully met
+        - Update story status to "Validation Passed" or escalate if still failing
+
+    - epic_completion:
+      action: finalize_epic
+      creates: epic_documentation
+      condition: validation_passed
+      notes: |
+        Epic Completion Process:
+        - Create comprehensive epic documentation in .bmad/implementations/
+        - Generate reasoning.md, structure.md, implementation.md, handoff.md
+        - Update dependencies.yaml with cross-epic relationships
+        - Record final learnings in technical domain folders
+        - Archive test results and validation reports
+        - Update story status to "Done"
+        - Prepare handoff documentation for future epics
+
+  flow_diagram: |
+    ```mermaid
+    graph TD
+        A[Start: Epic Story] --> B[dev: Implement Epic]
+        B --> C[qa: Create Test Cases]
+        C --> D[qa: Validate Functionality]
+        D --> E{Validation Passed?}
+        E -->|Yes| F[Epic Completion]
+        E -->|No| G[repair: Resolve Issues]
+        G --> H[qa: Final Validation]
+        H --> I{Issues Resolved?}
+        I -->|Yes| F
+        I -->|No| J[Escalate/Manual Review]
+        
+        F --> K[Generate Epic Documentation]
+        K --> L[Update Learning Systems]
+        L --> M[Epic Complete]
+        
+        B -.-> B1[Load .bmad/implementations/ context]
+        B -.-> B2[Use MCP servers for codebase search]
+        C -.-> C1[Use Playwright MCP for E2E tests]
+        C -.-> C2[Create comprehensive test coverage]
+        D -.-> D1[Validate against epic requirements]
+        D -.-> D2[Check for hallucination]
+        G -.-> G1[Load repair-memory.jsonl]
+        G -.-> G2[Consult .bmad/learnings/]
+        
+        style M fill:#90EE90
+        style F fill:#ADD8E6
+        style B fill:#FFE4B5
+        style C fill:#F0E68C
+        style D fill:#F0E68C
+        style G fill:#FFB6C1
+        style J fill:#FF6B6B
+    ```
+
+  error_handling:
+    dev_implementation_fails:
+      action: "Log error details, consult .bmad/learnings/ for similar issues, escalate to repair agent"
+    test_creation_fails:
+      action: "Review epic requirements, consult MCP documentation, create simpler test cases first"
+    validation_fails:
+      action: "Document specific failures, trigger repair agent workflow"
+    repair_fails:
+      action: "Escalate to manual review, update repair-memory.jsonl with failure case"
+
+  context_management:
+    epic_context:
+      - Load from .bmad/implementations/[epic-name]/
+      - Include reasoning.md, structure.md from previous epics
+      - Reference dependencies.yaml for related epics
+    mcp_integration:
+      - Mandatory Serena MCP for semantic codebase searches
+      - Context-7 for documentation lookup
+      - Domain-specific MCPs (Supabase, Playwright, etc.)
+      - Log all MCP lookups for compliance tracking
+    learning_integration:
+      - Record successes in .bmad/learnings/[domain]/successes/
+      - Record failures in .bmad/learnings/[domain]/failures/
+      - Update patterns in .bmad/learnings/[domain]/patterns/
+      - Track metrics in .bmad/learnings/[domain]/metrics/
+
+  quality_gates:
+    implementation_complete:
+      - All epic acceptance criteria addressed
+      - Code follows standardized commenting guidelines
+      - Implementation documented with AI-readable comments
+    tests_created:
+      - Comprehensive test coverage (unit, integration, E2E)
+      - Test cases validate epic requirements
+      - Edge cases and error scenarios covered
+    validation_passed:
+      - All tests pass
+      - Functionality matches epic exactly (no hallucination)
+      - Performance and security validated
+      - Code quality meets standards
+
+  handoff_prompts:
+    dev_to_qa_testing: "Implementation complete. All epic requirements addressed with comprehensive documentation. Ready for test case creation."
+    qa_testing_to_validation: "Test cases created and validated against epic requirements. Ready for functionality validation."
+    qa_to_repair: "Validation failed with specific issues: [list issues]. Repair agent needed to resolve before final validation."
+    repair_to_qa: "Issues resolved with detailed explanations. Ready for final validation to ensure no regressions."
+    validation_to_completion: "All validation passed. Epic fully implemented and tested. Ready for documentation and completion."
+
+  decision_guidance:
+    when_to_use:
+      - Implementing specific epic stories with clear requirements
+      - Need comprehensive testing and validation workflow
+      - Want to ensure no hallucination in implementation
+      - Require structured error handling and repair process
+      - Building production-ready features with quality gates
+
+  integration_notes:
+    bmad_systems:
+      - Integrates with existing .bmad/implementations/ structure
+      - Uses .bmad/learnings/ technical domain organization
+      - Follows MCP usage guidelines for all agents
+      - Maintains standardized commenting for AI readability
+    workflow_compatibility:
+      - Can be used after story creation from greenfield-ui workflow
+      - Compatible with brownfield development workflows
+      - Supports both new feature development and bug fixes

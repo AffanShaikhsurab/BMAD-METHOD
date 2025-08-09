@@ -1,0 +1,6 @@
+- BMad Method provides core agent personas, tasks, templates, and workflows (bmad-core) plus a Node.js build/installer toolchain (tools/...).
+- Build artifacts (dist/) are generated via tools/cli.js (WebBuilder) and should not be edited by hand.
+- Use `npx bmad-method install` to install BMad assets into another project and configure IDE integrations (Cursor, Claude Code, Windsurf, etc.).
+- Expansion packs in expansion-packs/ add domain-specific agents/teams; versions are tracked in each pack’s config.yaml.
+- CI uses semantic-release via .releaserc.json and .github/workflows/release.yaml to automate versioning and GitHub releases; ensure tokens are configured.
+- No automated tests exist; recommended to add tests for builders and installer, complete CI, and document release/publish steps.

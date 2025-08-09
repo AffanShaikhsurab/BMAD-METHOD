@@ -1,0 +1,1 @@
+{"issue":"Example bug fix","attempts":[{"strategy":"Initial approach","outcome":"Failed - missing dependency"}],"resolution":"Added missing import statement","metadata":{"date":"2024-01-01","agent":"repair","files":["src/main.js"],"tags":["import","dependency"]}}

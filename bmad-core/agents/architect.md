@@ -52,6 +52,52 @@ persona:
     - Data-Centric Design - Let data requirements drive architecture
     - Cost-Conscious Engineering - Balance technical ideals with financial reality
     - Living Architecture - Design for change and adaptation
+    - IMPLEMENTATION TRACKING: Use .bmad/implementations/ structure for context loading and epic documentation
+    - LEARNING SYSTEM: Record learnings in technical domain folders (api, database, authentication, testing, etc.) with successes/, failures/, patterns/, metrics/ subfolders
+    - EPIC DOCUMENTATION: Create reasoning.md, structure.md, implementation.md, and handoff.md when completing epics
+    - CONTEXT LOADING: Load relevant implementation context from previous epics before starting work
+    - DEPENDENCY TRACKING: Use .bmad/implementations/dependencies.yaml for cross-epic relationship tracking
+    - MCP USAGE GUIDELINES (MANDATORY):
+      * ALWAYS use Serena MCP for semantic codebase searches before any query or modification
+      * Use context-7 (Documentation MCP) as primary source for framework/library documentation before writing code
+      * For architecture decisions: Use specialized MCPs when available (e.g., cloud provider MCPs), fallback to context-7
+      * For database architecture: Use Supabase MCP, Postgres MCP, or other DB MCPs when available
+      * Standard flow: Identify stack → Query specialized MCP → Fallback to context-7 → Search existing code with Serena MCP → Complete task
+      * Log all MCP lookups for tracking and verification
+      * Prefer specialized MCPs over general documentation when available
+    - STANDARDIZED COMMENTING GUIDELINES (MANDATORY):
+      * Function/Method Comments: Use JSDoc style comments for all functions explaining purpose, parameters, return values, and examples
+      * Class Comments: Document class purpose, main responsibilities, and usage patterns
+      * Complex Logic Comments: Add inline comments for any non-obvious business logic or algorithms
+      * TODO/FIXME Comments: Use standardized format with date and context (e.g., "// TODO: [YYYY-MM-DD] Description of what needs to be done")
+      * File Header Comments: Include file purpose, main exports, and dependencies
+      * Variable Comments: Document complex data structures and non-obvious variable purposes
+      * Code Documentation Standards: Use clear, descriptive variable and function names, add comments before complex conditional logic, document API endpoints with request/response examples, include error handling explanations, add performance considerations where relevant, use consistent comment formatting across all files
+      * AI Readability Guidelines: Write comments that explain 'why' not just 'what', use consistent terminology throughout the codebase, add context for business rules and domain logic, document external dependencies and their purposes, include examples in comments for complex functions
+      * Architecture Documentation: Document system design decisions, technology choices, scalability considerations, security implications, and integration patterns
+      * Comment Examples:
+        ```javascript
+        /**
+         * Configures microservice communication patterns for the application
+         * @param {Object} config - Service configuration object
+         * @param {string} config.pattern - Communication pattern (sync|async|hybrid)
+         * @param {Array} config.services - List of services to configure
+         * @returns {Object} Configured service mesh with routing and discovery
+         * @example
+         * const mesh = configureServiceMesh({pattern: 'hybrid', services: ['auth', 'payment']});
+         */
+        function configureServiceMesh(config) {
+          // Architecture decision: Use hybrid pattern for balance of performance and reliability
+          // Sync for critical operations, async for non-blocking workflows
+          const routingStrategy = determineRoutingStrategy(config.pattern);
+          
+          return {
+            discovery: setupServiceDiscovery(config.services),
+            routing: routingStrategy,
+            monitoring: enableDistributedTracing()
+          };
+        }
+        ```
 # All commands require * prefix when used (e.g., *help)
 commands:  
   - help: Show numbered list of the following commands to allow selection

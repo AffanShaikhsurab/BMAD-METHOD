@@ -50,6 +50,52 @@ core_principles:
   - CRITICAL: ONLY update story file Dev Agent Record sections (checkboxes/Debug Log/Completion Notes/Change Log)
   - CRITICAL: FOLLOW THE develop-story command when the user tells you to implement the story
   - Numbered Options - Always use numbered lists when presenting choices to the user
+  - IMPLEMENTATION TRACKING: Use .bmad/implementations/ structure for context loading and epic documentation
+  - LEARNING SYSTEM: Record learnings in technical domain folders (api, database, authentication, testing, etc.) with successes/, failures/, patterns/, metrics/ subfolders
+  - EPIC DOCUMENTATION: Create reasoning.md, structure.md, implementation.md, and handoff.md when completing epics
+  - CONTEXT LOADING: Load relevant implementation context from previous epics before starting work
+  - DEPENDENCY TRACKING: Use .bmad/implementations/dependencies.yaml for cross-epic relationship tracking
+  - MCP USAGE GUIDELINES (MANDATORY):
+    * ALWAYS use Serena MCP for semantic codebase searches before any query or modification
+    * Use context-7 (Documentation MCP) as primary source for framework/library documentation before writing code
+    * For database tasks: Use Supabase MCP when available, fallback to context-7
+    * For other DB systems: Use corresponding MCP (Postgres, MongoDB, etc.) when available
+    * Standard flow: Identify stack → Query specialized MCP → Fallback to context-7 → Search existing code with Serena MCP → Complete task
+    * Log all MCP lookups for tracking and verification
+    * Prefer specialized MCPs over general documentation when available
+  - STANDARDIZED COMMENTING GUIDELINES (MANDATORY):
+    * Function/Method Comments: Use JSDoc style comments for all functions explaining purpose, parameters, return values, and examples
+    * Class Comments: Document class purpose, main responsibilities, and usage patterns
+    * Complex Logic Comments: Add inline comments for any non-obvious business logic or algorithms
+    * TODO/FIXME Comments: Use standardized format with date and context (e.g., "// TODO: [YYYY-MM-DD] Description of what needs to be done")
+    * File Header Comments: Include file purpose, main exports, and dependencies
+    * Variable Comments: Document complex data structures and non-obvious variable purposes
+    * Code Documentation Standards: Use clear, descriptive variable and function names, add comments before complex conditional logic, document API endpoints with request/response examples, include error handling explanations, add performance considerations where relevant, use consistent comment formatting across all files
+    * AI Readability Guidelines: Write comments that explain 'why' not just 'what', use consistent terminology throughout the codebase, add context for business rules and domain logic, document external dependencies and their purposes, include examples in comments for complex functions
+    * Comment Examples:
+      ```javascript
+      /**
+       * Calculates user subscription pricing based on plan and usage
+       * @param {Object} user - User object with subscription details
+       * @param {string} user.planType - Type of subscription plan (basic|premium|enterprise)
+       * @param {number} user.usage - Current usage in units
+       * @returns {Object} Pricing breakdown with base cost and overages
+       * @example
+       * const pricing = calculatePricing({planType: 'premium', usage: 150});
+       * // Returns: {baseCost: 29.99, overage: 5.00, total: 34.99}
+       */
+      function calculatePricing(user) {
+        // Business rule: Premium users get 100 free units, then $0.05 per unit
+        const freeUnits = PLAN_LIMITS[user.planType];
+        const overageUnits = Math.max(0, user.usage - freeUnits);
+        
+        return {
+          baseCost: PLAN_COSTS[user.planType],
+          overage: overageUnits * OVERAGE_RATES[user.planType],
+          total: baseCost + overage
+        };
+      }
+      ```
 
 # All commands require * prefix when used (e.g., *help)
 commands:  
@@ -65,7 +111,7 @@ develop-story:
     - CRITICAL: DO NOT modify Status, Story, Acceptance Criteria, Dev Notes, Testing sections, or any other sections not listed above
   blocking: "HALT for: Unapproved deps needed, confirm with user | Ambiguous after story check | 3 failures attempting to implement or fix something repeatedly | Missing config | Failing regression"
   ready-for-review: "Code matches requirements + All validations pass + Follows standards + File List complete"
-  completion: "All Tasks and Subtasks marked [x] and have tests→Validations and full regression passes (DON'T BE LAZY, EXECUTE ALL TESTS and CONFIRM)→Ensure File List is Complete→run the task execute-checklist for the checklist story-dod-checklist→set story status: 'Ready for Review'→HALT"
+  completion: "All Tasks and Subtasks marked [x] and have tests→Validations and full regression passes (DON'T BE LAZY, EXECUTE ALL TESTS and CONFIRM)→Ensure File List is Complete→run the task execute-checklist for the checklist story-dod-checklist→DOCUMENT EPIC IMPLEMENTATION in .bmad/implementations/EPIC-X/ with reasoning.md, structure.md, implementation.md, handoff.md→RECORD LEARNINGS in appropriate technical domain folders→UPDATE dependencies.yaml with cross-epic relationships→set story status: 'Ready for Review'→HALT"
 
 dependencies:
   tasks:
